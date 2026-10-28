@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mimicry Generator — AmneziaWG × GTA V</title>
+  <meta name="description" content="Локальный генератор параметров маскировки AmneziaWG под трафик GTA V: FiveM (ENet / Q3 OOB) и GTA Online.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">V</div>
+        <div class="brand-text">
+          <h1>Mimicry Generator</h1>
+          <p>AmneziaWG <span>×</span> GTA V</p>
+        </div>
+      </div>
+      <div class="top-badges">
+        <span class="badge badge-green">FiveM / ENet</span>
+        <span class="badge">offline</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel controls">
+        <div class="panel-head">
+          <h2>Параметры генерации</h2>
+          <span class="muted small">Всё считается локально</span>
+        </div>
+
+        <div class="form">
+          <label class="field">
+            <span>Профиль</span>
+            <select id="profile">
+              <option value="fivem" selected>GTA V · FiveM — ENet / Q3 OOB (UDP 30120)</option>
+              <option value="gtao">GTA Online — только размеры пакетов (UDP 6672), слабая имитация</option>
+            </select>
+            <small id="profileHint"></small>
+          </label>
+
+          <div class="grid2">
+            <label class="field">
+              <span>Версия AWG</span>
+              <select id="version">
+                <option value="3" selected>3.1 — header protection</option>
+                <option value="2">2.0 — динамические H</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Режим</span>
+              <select id="mode">
+                <option value="balanced" selected>Balanced</option>
+                <option value="stealth">Stealth</option>
+                <option value="fast">Fast</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="grid2">
+            <label class="field">
+              <span>IPv4 сервера</span>
+              <input id="serverIp" value="192.0.2.1" spellcheck="false" autocomplete="off">
+              <small>192.0.2.1 — адрес для документации. Попадает в peer JSON: перед импортом укажите реальный IP.</small>
+            </label>
+            <label class="field">
+              <span>Порт</span>
+              <input id="serverPort" type="number" min="1" max="65535" value="30120">
+            </label>
+          </div>
+
+          <div class="grid2">
+            <label class="field">
+              <span>MTU</span>
+              <input id="mtu" type="number" min="576" max="1500" value="1280">
+            </label>
+            <label class="field">
+              <span>Seed</span>
+              <input id="seed" placeholder="пусто — случайный" spellcheck="false" autocomplete="off">
+            </label>
+          </div>
+
+          <div class="btns">
+            <button id="generate" class="btn btn-primary" type="button">Сгенерировать</button>
+            <button id="newSeed" class="btn" type="button">Новый seed</button>
+          </div>
+
+          <div class="note">
+            <b>Важно:</b> S1–S4 и H1–H4 должны совпадать на клиенте и сервере.
+            Jc/Jmin/Jmax и I1–I5 — клиентские параметры. I1–I5 —
+            только начальные шаблоны пакетов: AWG-сервер не отвечает как
+            сервер GTA V и не превращает дальнейший VPN-трафик в игровой.
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel results" id="results" aria-live="polite">
+        <div id="empty" class="empty">
+          <div class="empty-icon">⛏</div>
+          <h2>Готов к генерации</h2>
+          <p>Выберите профиль и нажмите «Сгенерировать». Параметры появятся здесь вместе с готовыми конфигами.</p>
+        </div>
+
+        <div id="output" hidden>
+          <div class="result-head">
+            <div>
+              <h2 id="outTitle">GTA V · FiveM (ENet / Q3 OOB)</h2>
+              <p id="outSub" class="muted"></p>
+            </div>
+            <div class="seed-chip">
+              <span>seed</span>
+              <code id="seedOut"></code>
+              <button class="iconbtn" id="copySeed" type="button" title="Скопировать seed">⧉</button>
+            </div>
+          </div>
+
+          <div id="warnings" class="warnings"></div>
+
+          <div id="stats" class="stats"></div>
+
+          <div class="tabs" role="tablist" aria-label="Результат">
+            <button class="tab active" data-tab="params" role="tab" aria-selected="true">Параметры</button>
+            <button class="tab" data-tab="client" role="tab" aria-selected="false">Клиент .conf</button>
+            <button class="tab" data-tab="server" role="tab" aria-selected="false">Сервер .conf</button>
+            <button class="tab" data-tab="json" role="tab" aria-selected="false">JSON</button>
+            <button class="tab" data-tab="packets" role="tab" aria-selected="false">Пакеты</button>
+          </div>
+
+          <div class="tabpane active" id="pane-params" role="tabpanel">
+            <div id="params"></div>
+            <div id="checks" class="checks"></div>
+          </div>
+
+          <div class="tabpane" id="pane-client" role="tabpanel">
+            <div class="tabbar">
+              <span class="muted small">awg-quick / AmneziaWG client</span>
+              <div>
+                <button class="btn btn-sm" data-copy="client" type="button">Копировать</button>
+                <button class="btn btn-sm" data-download="client" type="button">Скачать</button>
+              </div>
+            </div>
+            <pre id="clientPre"></pre>
+          </div>
+
+          <div class="tabpane" id="pane-server" role="tabpanel">
+            <div class="tabbar">
+              <span class="muted small">awg-quick / AmneziaWG server</span>
+              <div>
+                <button class="btn btn-sm" data-copy="server" type="button">Копировать</button>
+                <button class="btn btn-sm" data-download="server" type="button">Скачать</button>
+              </div>
+            </div>
+            <pre id="serverPre"></pre>
+          </div>
+
+          <div class="tabpane" id="pane-json" role="tabpanel">
+            <div class="tabbar">
+              <span class="muted small">JSON endpoint awg — для импорта в панель</span>
+              <div>
+                <button class="btn btn-sm" data-copy="json" type="button">Копировать</button>
+                <button class="btn btn-sm" data-download="json" type="button">Скачать</button>
+              </div>
+            </div>
+            <pre id="jsonPre"></pre>
+            <p class="muted small" style="margin:9px 0 0">Шаблон для вставки в «Импорт» панели: замените &lt;PRIVATE_KEY&gt;, &lt;SERVER_PUBLIC_KEY&gt; и &lt;PRESHARED_KEY&gt;. Адрес пира берётся из поля «IPv4 сервера» — значение 192.0.2.1 зарезервировано для документации, укажите реальный IP. Порт берётся из поля «Порт». PersistentKeepalive панель подставит сама (25) — так шаблон совместим и со старыми сборками панели; при необходимости задайте значение в панели вручную (число или диапазон).</p>
+          </div>
+
+          <div class="tabpane" id="pane-packets" role="tabpanel">
+            <div id="packets"></div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Генератор не гарантирует обход DPI и не эмулирует полноценную сессию GTA V.</span>
+      <span class="mono">generatorGTA5</span>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
